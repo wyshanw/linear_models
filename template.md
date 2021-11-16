@@ -102,6 +102,8 @@ broom::glance(fit)
     ## 1    0.0342        0.0341  182.      271. 6.73e-229     4 -202113. 4.04e5 4.04e5
     ## # … with 3 more variables: deviance <dbl>, df.residual <int>, nobs <int>
 
+## diagnostics
+
 ``` r
 modelr::add_residuals(nyc_airbnb, fit)
 ```
@@ -120,3 +122,57 @@ modelr::add_residuals(nyc_airbnb, fit)
     ##  9    95   5   Bronx   Allerton     Entire home/apt   5.47
     ## 10   125   4.5 Bronx   Allerton     Entire home/apt  51.5 
     ## # … with 40,482 more rows
+
+``` r
+nyc_airbnb %>% 
+  modelr::add_residuals(fit) %>% 
+  ggplot(aes(x = borough, y = resid)) + geom_violin() + ylim(-500,1500) #zoom in
+```
+
+    ## Warning: Removed 9993 rows containing non-finite values (stat_ydensity).
+
+<img src="template_files/figure-gfm/unnamed-chunk-6-1.png" width="90%" />
+
+``` r
+nyc_airbnb %>% 
+  modelr::add_residuals(fit) %>% 
+  ggplot(aes(x = stars, y = resid)) + geom_point()+facet_wrap(.~borough)
+```
+
+    ## Warning: Removed 9962 rows containing missing values (geom_point).
+
+<img src="template_files/figure-gfm/unnamed-chunk-6-2.png" width="90%" />
+
+# hypothesis test
+
+t-test by default
+
+``` r
+fit %>% 
+  broom::tidy()
+```
+
+    ## # A tibble: 5 × 5
+    ##   term            estimate std.error statistic   p.value
+    ##   <chr>              <dbl>     <dbl>     <dbl>     <dbl>
+    ## 1 (Intercept)         19.8     12.2       1.63 1.04e-  1
+    ## 2 stars               32.0      2.53     12.7  1.27e- 36
+    ## 3 boroughBrooklyn    -49.8      2.23    -22.3  6.32e-109
+    ## 4 boroughQueens      -77.0      3.73    -20.7  2.58e- 94
+    ## 5 boroughBronx       -90.3      8.57    -10.5  6.64e- 26
+
+what about significance of borough
+
+``` r
+fit_null = lm(price ~ stars + borough, data = nyc_airbnb)
+fit_alt = lm(price ~ stars + borough + room_type, data = nyc_airbnb)
+
+anova(fit_null, fit_alt) %>% 
+  broom::tidy()
+```
+
+    ## # A tibble: 2 × 6
+    ##   res.df         rss    df     sumsq statistic p.value
+    ##    <dbl>       <dbl> <dbl>     <dbl>     <dbl>   <dbl>
+    ## 1  30525 1005601724.    NA       NA        NA       NA
+    ## 2  30523  921447496.     2 84154228.     1394.       0
